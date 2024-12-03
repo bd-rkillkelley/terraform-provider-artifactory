@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -253,6 +254,15 @@ func downloadUsingFileInfo(ctx context.Context, outputPath string, forceOverwrit
 	})
 	_, err = m.(util.ProviderMetadata).Client.R().SetOutput(outputPath).Get(fileInfo.DownloadUri)
 	if err != nil {
+		return fileInfo, err
+	}
+
+	// Force file system sync
+	cmd := exec.Command("sync")
+	if err := cmd.Run(); err != nil {
+		tflog.Error(ctx, "Error syncing file system", map[string]interface{}{
+			"error": err,
+		})
 		return fileInfo, err
 	}
 
